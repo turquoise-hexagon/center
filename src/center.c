@@ -86,7 +86,21 @@ cleanup(int signal)
 
     exit(EXIT_FAILURE);
 }
-    
+
+static void
+install_handler(void (*function)(int), int signal)
+{
+    struct sigaction sig;
+
+    sigemptyset(&sig.sa_mask);
+
+    sig.sa_flags = SA_RESTART;
+    sig.sa_handler = function;
+
+    if (sigaction(signal, &sig, NULL) == -1)
+        errx(EXIT_FAILURE, "failed to install signal handler");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -96,17 +110,8 @@ main(int argc, char **argv)
 
     draw(0);
 
-    struct sigaction sig_int;
-    sig_int.sa_handler = cleanup;
-
-    if (sigaction(SIGINT, &sig_int, NULL) == -1)
-        errx(EXIT_FAILURE, "failed to install signal handler");
-
-    struct sigaction sig_winch;
-    sig_winch.sa_handler = draw;
-
-    if (sigaction(SIGWINCH, &sig_winch, NULL) == -1)
-        errx(EXIT_FAILURE, "failed to install signal handler");
+    install_handler(cleanup, SIGINT);
+    install_handler(draw, SIGWINCH);
 
     for (;;)
         sleep(10);
