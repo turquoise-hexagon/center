@@ -1,0 +1,19 @@
+center
+======
+    center a text file & hide the terminal interface
+
+usage
+-----
+    * program
+        $ ./make
+        $ bin/center [file]
+    * documentation
+        $ cd doc
+        $ ./make.sh
+        $ man ./center.1.gz
+
+depends on
+----------
+    * bash
+    * docutils
+    * gcc
