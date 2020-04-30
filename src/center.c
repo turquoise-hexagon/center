@@ -10,38 +10,38 @@
 static unsigned x = 0;
 static unsigned y = 0;
 static unsigned l = 0;
-static char **input = NULL;
+static char **content = NULL;
 
 static void
-load_file(char *name)
+load_file(const char *path)
 {
-    FILE *file = fopen(name, "r");
+    FILE *file = fopen(path, "r");
 
     if (file == NULL)
-        errx(EXIT_FAILURE, "failed to open '%s'", name);
+        errx(EXIT_FAILURE, "failed to open '%s'", path);
 
     unsigned tmp = 1;
-    char cur[LINE_MAX];
+    char input[LINE_MAX];
     
-    if ((input = malloc(tmp * sizeof *input)) == NULL)
+    if ((content = malloc(tmp * sizeof *content)) == NULL)
         errx(EXIT_FAILURE, "failed to allocate memory");
 
     for (;;) {
-        if (fgets(cur, LINE_MAX, file) == NULL)
+        if (fgets(input, LINE_MAX, file) == NULL)
             break;
 
-        if ((input[l] = malloc(LINE_MAX * sizeof *input[l])) == NULL)
+        if ((content[l] = malloc(LINE_MAX * sizeof *content[l])) == NULL)
             errx(EXIT_FAILURE, "failed to allocate memory");
 
-        strncpy(input[l], cur, LINE_MAX);
+        strncpy(content[l], input, LINE_MAX);
 
         if (++l == tmp)
-            if ((input = realloc(input, (tmp *= 2) * sizeof *input)) == NULL)
+            if ((content = realloc(content, (tmp *= 2) * sizeof *content)) == NULL)
                 errx(EXIT_FAILURE, "failed to allocate memory");
     }
 
     if (fclose(file) == EOF)
-        errx(EXIT_FAILURE, "failed to close '%s'", name);
+        errx(EXIT_FAILURE, "failed to close '%s'", path);
 }
 
 static void
@@ -69,7 +69,7 @@ draw(int signal)
         putchar('\n');
 
     for (unsigned i = 0; i < l; ++i)
-        printf("%*s", (y + (unsigned)strnlen(input[i], LINE_MAX)) / 2, input[i]);
+        printf("%*s", (y + (unsigned)strnlen(content[i], LINE_MAX)) / 2, content[i]);
 }
 
 static void
@@ -80,9 +80,9 @@ cleanup(int signal)
     printf("\033[?25h");
 
     for (unsigned i = 0; i < l; ++i)
-        free(input[i]);
+        free(content[i]);
 
-    free(input);
+    free(content);
 
     exit(EXIT_FAILURE);
 }
