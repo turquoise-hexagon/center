@@ -41,7 +41,7 @@ load_file(char *name)
     }
 
     if (fclose(file) == EOF)
-        errx(EXIT_FAILURE, "failed to close input");
+        errx(EXIT_FAILURE, "failed to close '%s'", name);
 }
 
 static void
