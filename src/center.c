@@ -22,7 +22,7 @@ load_file(const char *path)
 
     unsigned tmp = 1;
     char input[LINE_MAX];
-    
+
     if ((content = malloc(tmp * sizeof *content)) == NULL)
         errx(EXIT_FAILURE, "failed to allocate memory");
 
