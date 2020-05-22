@@ -23,20 +23,20 @@ load_file(const char *path)
     unsigned tmp = 1;
     char input[LINE_MAX];
 
-    if ((content = malloc(tmp * sizeof *content)) == NULL)
+    if ((content = malloc(tmp * sizeof(*content))) == NULL)
         errx(EXIT_FAILURE, "failed to allocate memory");
 
     for (;;) {
         if (fgets(input, LINE_MAX, file) == NULL)
             break;
 
-        if ((content[l] = malloc(LINE_MAX * sizeof *content[l])) == NULL)
+        if ((content[l] = malloc(LINE_MAX * sizeof(*content[l]))) == NULL)
             errx(EXIT_FAILURE, "failed to allocate memory");
 
         strncpy(content[l], input, LINE_MAX);
 
         if (++l == tmp)
-            if ((content = realloc(content, (tmp *= 2) * sizeof *content)) == NULL)
+            if ((content = realloc(content, (tmp *= 2) * sizeof(*content))) == NULL)
                 errx(EXIT_FAILURE, "failed to allocate memory");
     }
 
