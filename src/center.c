@@ -7,88 +7,58 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
-static unsigned x = 0;
-static unsigned y = 0;
-static unsigned l = 0;
-static char **content = NULL;
+/*
+ * handling parameters with signal handlers is complex
+ * we will use global variables here for simplicity
+ */
+static size_t x_terminal_size = 0;
+static size_t y_terminal_size = 0;
+static size_t number_lines = 0;
+static char **file_content = NULL;
 
-static void
-load_file(const char *path)
+static void *
+allocate(size_t size)
 {
-    FILE *file = fopen(path, "r");
+    void *ptr = malloc(size);
+
+    if (ptr == NULL)
+        errx(EXIT_FAILURE, "failed to allocate memory");
+
+    return ptr;
+}
+
+static FILE *
+open_file(const char *path, const char *mode)
+{
+    FILE *file = fopen(path, mode);
 
     if (file == NULL)
         errx(EXIT_FAILURE, "failed to open '%s'", path);
 
-    unsigned tmp = 1;
-    char input[LINE_MAX];
+    return file;
+}
 
-    if ((content = malloc(tmp * sizeof(*content))) == NULL)
-        errx(EXIT_FAILURE, "failed to allocate memory");
-
-    for (;;) {
-        if (fgets(input, LINE_MAX, file) == NULL)
-            break;
-
-        if ((content[l] = malloc(LINE_MAX * sizeof(*content[l]))) == NULL)
-            errx(EXIT_FAILURE, "failed to allocate memory");
-
-        strncpy(content[l], input, LINE_MAX);
-
-        if (++l == tmp)
-            if ((content = realloc(content, (tmp *= 2) * sizeof(*content))) == NULL)
-                errx(EXIT_FAILURE, "failed to allocate memory");
-    }
-
+static void
+close_file(const char *path, FILE *file)
+{
     if (fclose(file) == EOF)
         errx(EXIT_FAILURE, "failed to close '%s'", path);
 }
 
 static void
-get_size(void)
+get_terminal_size(void)
 {
-    struct winsize win;
+    struct winsize window;
 
-    if (ioctl(fileno(stdout), TIOCGWINSZ, &win) == -1)
+    if (ioctl(fileno(stdout), TIOCGWINSZ, &window) == -1)
         errx(EXIT_FAILURE, "failed to get terminal size");
 
-    x = win.ws_row;
-    y = win.ws_col;
+    x_terminal_size = window.ws_row;
+    y_terminal_size = window.ws_col;
 }
 
 static void
-draw(int signal)
-{
-    (void)signal;
-
-    printf("\033[2J\033[H");
-
-    get_size();
-
-    for (unsigned i = 0; i < (x - l) / 2; ++i)
-        putchar('\n');
-
-    for (unsigned i = 0; i < l; ++i)
-        printf("%*s", (y + (unsigned)strnlen(content[i], LINE_MAX)) / 2, content[i]);
-}
-
-static void
-cleanup(int signal)
-{
-    (void)signal;
-
-    printf("\033[?25h");
-
-    for (unsigned i = 0; i < l; ++i)
-        free(content[i]);
-
-    free(content);
-
-    exit(EXIT_FAILURE);
-}
-
-static void
-install_handler(void (*function)(int), int signal)
+install_signal_handler(void (*function)(int), int signal)
 {
     struct sigaction sig;
 
@@ -101,19 +71,90 @@ install_handler(void (*function)(int), int signal)
         errx(EXIT_FAILURE, "failed to install signal handler");
 }
 
+static void
+load_file(const char *path)
+{
+    FILE *file = open_file(path, "r");
+
+    char line[LINE_MAX] = {0};
+    size_t allocated_size = 1;
+
+    file_content = allocate(allocated_size * sizeof(*file_content));
+
+    /* load file in memory */
+    for (;;) {
+        if (fgets(line, LINE_MAX, file) == NULL)
+            break;
+
+        file_content[number_lines] = allocate(LINE_MAX * sizeof(*file_content[number_lines]));
+
+        strncpy(file_content[number_lines], line, LINE_MAX);
+
+        if (++number_lines == allocated_size)
+            if ((file_content = realloc(file_content, \
+                            (allocated_size *= 2) * sizeof(*file_content))) == NULL)
+                errx(EXIT_FAILURE, "failed to allocate memory");
+    }
+
+    close_file(path, file);
+}
+
+static void
+draw_content(int signal)
+{
+    (void) signal; /* throw away signal */
+
+    /*
+     * 2J : clear terminal
+     * H  : start printing in 0;0
+     */
+    printf("\033[2J\033[H");
+
+    get_terminal_size();
+
+    /* align vertically */
+    for (size_t i = 0; i < (x_terminal_size - number_lines) / 2; ++i)
+        putchar('\n');
+
+    size_t line_length;
+
+    for (size_t i = 0; i < number_lines; ++i) {
+        line_length = strnlen(file_content[i], LINE_MAX);
+
+        printf("%*s", (int)(y_terminal_size + line_length) / 2, file_content[i]);
+    }
+}
+
+static void
+cleanup_program(int signal)
+{
+    (void)signal; /* throw away signal */
+
+    /* ?25h : show cursor */
+    printf("\033[?25h");
+
+    for (size_t i = 0; i < number_lines; ++i)
+        free(file_content[i]);
+
+    free(file_content);
+    
+    exit(EXIT_FAILURE);
+}
+
 int
 main(int argc, char **argv)
 {
     load_file(argc != 1 ? argv[1] : "/dev/stdin");
 
+    /* ?25l : hide cursor */
     printf("\033[?25l");
 
-    draw(0);
+    draw_content(0);
 
-    install_handler(cleanup, SIGINT);
-    install_handler(draw, SIGWINCH);
+    install_signal_handler(cleanup_program, SIGINT);
+    install_signal_handler(draw_content, SIGWINCH);
 
-    for (;;)
+    for (;;) // keep the program busy
         sleep(10);
 
     return EXIT_SUCCESS;
