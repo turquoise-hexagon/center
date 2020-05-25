@@ -154,7 +154,7 @@ main(int argc, char **argv)
     install_signal_handler(cleanup_program, SIGINT);
     install_signal_handler(draw_content, SIGWINCH);
 
-    for (;;) // keep the program busy
+    for (;;) /* keep the program busy */
         sleep(10);
 
     return EXIT_SUCCESS;
