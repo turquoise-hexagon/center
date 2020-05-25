@@ -91,7 +91,7 @@ load_file(const char *path)
         strncpy(file_content[number_lines], line, LINE_MAX);
 
         if (++number_lines == allocated_size)
-            if ((file_content = realloc(file_content, \
+            if ((file_content = realloc(file_content,
                 (allocated_size *= 2) * sizeof(*file_content))) == NULL)
                 errx(EXIT_FAILURE, "failed to allocate memory");
     }
