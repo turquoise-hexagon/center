@@ -16,7 +16,7 @@ static size_t y_terminal_size = 0;
 static size_t number_lines = 0;
 static char **file_content = NULL;
 
-static void *
+static inline void *
 allocate(size_t size)
 {
     void *ptr = malloc(size);
