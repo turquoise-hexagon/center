@@ -137,7 +137,7 @@ cleanup_program(int signal)
         free(file_content[i]);
 
     free(file_content);
-    
+
     exit(EXIT_FAILURE);
 }
 
