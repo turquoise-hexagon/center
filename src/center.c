@@ -92,7 +92,7 @@ load_file(const char *path)
 
         if (++number_lines == allocated_size)
             if ((file_content = realloc(file_content, \
-                            (allocated_size *= 2) * sizeof(*file_content))) == NULL)
+                (allocated_size *= 2) * sizeof(*file_content))) == NULL)
                 errx(EXIT_FAILURE, "failed to allocate memory");
     }
 
