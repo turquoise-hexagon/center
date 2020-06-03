@@ -5,15 +5,14 @@ center
 usage
 -----
     * program
-        $ ./make
-        $ bin/center [file]
+        $ make
+        $ bin/center
     * documentation
-        $ cd doc
-        $ ./make.sh
-        $ man ./center.1.gz
+        $ make
+        $ man doc/center.1.gz
 
 depends on
 ----------
-    * bash
     * docutils
     * gcc
+    * make
