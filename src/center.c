@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdnoreturn.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -135,7 +136,7 @@ draw_content(int signal)
     }
 }
 
-static void
+static noreturn void
 cleanup(int signal)
 {
     (void)signal; /* throw away signal */
