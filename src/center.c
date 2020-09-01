@@ -48,7 +48,7 @@ copy_input(const char *str)
 
     {
         size_t len;
-        
+
         len = strnlen(str, LINE_MAX);
         copy = allocate(len * sizeof(*copy));
         strncpy(copy, str, len);
