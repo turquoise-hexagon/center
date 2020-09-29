@@ -167,7 +167,7 @@ draw_content(int signal)
      */
     get_terminal_size();
     printf("\033[?25l\033[2J\033[H");
-    printf("\033[%ldH", (x - content_size) / 2);
+    printf("\033[%ldH", (x - content_size) / 2 + 1);
 
     for (size_t i = 0; i < content_size; ++i) {
         size_t len;
