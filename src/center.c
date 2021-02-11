@@ -41,25 +41,6 @@ reallocate(void *old, size_t size)
     return new;
 }
 
-static inline char *
-copy_input(const char *str)
-{
-    char *cpy;
-
-    {
-        size_t len;
-
-        len = strnlen(str, LINE_MAX);
-        cpy = allocate(len * sizeof(*cpy));
-        strncpy(cpy, str, len);
-
-        /* fix string */
-        cpy[len - 1] = 0;
-    }
-
-    return cpy;
-}
-
 static FILE *
 open_file(const char *path, const char *mode)
 {
@@ -115,7 +96,12 @@ load_content(const char *path)
         char input[LINE_MAX] = {0};
 
         while (fgets(input, LINE_MAX, file)) {
-            content[assigned] = copy_input(input);
+            size_t length = strnlen(input, LINE_MAX);
+
+            /* fix string */
+            input[length - 1] = 0;
+
+            content[assigned] = strndup(input, length);
 
             if (++assigned == allocated)
                 content = reallocate(content,
