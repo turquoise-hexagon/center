@@ -77,7 +77,9 @@ copy_input(const char *str)
     char *cpy;
 
     {
-        size_t len = strnlen(str, LINE_MAX);
+        size_t len;
+
+        len = strnlen(str, LINE_MAX);
 
         if (! (cpy = strndup(str, len)))
             ERROR(1, "error : failed to duplicated string\n");
