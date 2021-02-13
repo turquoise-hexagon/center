@@ -13,16 +13,19 @@ static size_t y            = 0;
 static size_t content_size = 0;
 static char **content      = NULL;
 
+#define ERROR(code, ...) {        \
+    fprintf(stderr, __VA_ARGS__); \
+                                  \
+    exit(code);                   \
+}
+
 static inline void *
 allocate(size_t size)
 {
     void *ptr;
 
-    if (! (ptr = malloc(size))) {
-        fprintf(stderr, "error : failed to allocate memory\n");
-
-        exit(1);
-    }
+    if (! (ptr = malloc(size)))
+        ERROR(1, "error : failed to allocate '%lu' bytes of memory\n", size);
 
     return ptr;
 }
@@ -32,11 +35,8 @@ reallocate(void *old, size_t size)
 {
     void *new;
 
-    if (! (new = realloc(old, size))) {
-        fprintf(stderr, "error : failed to reallocate memory\n");
-
-        exit(1);
-    }
+    if (! (new = realloc(old, size)))
+        ERROR(1, "error : failed to reallocate '%lu' bytes of memory\n", size);
 
     return new;
 }
@@ -46,11 +46,8 @@ open_file(const char *path, const char *mode)
 {
     FILE *file;
 
-    if (! (file = fopen(path, mode))) {
-        fprintf(stderr, "error : failed to open '%s'\n", path);
-
-        exit(1);
-    }
+    if (! (file = fopen(path, mode)))
+        ERROR(1, "error : failed to open '%s'\n", path);
 
     return file;
 }
@@ -58,11 +55,8 @@ open_file(const char *path, const char *mode)
 static void
 close_file(const char *path, FILE *file)
 {
-    if (fclose(file) != 0) {
-        fprintf(stderr, "error : failed to close '%s\n'", path);
-
-        exit(1);
-    }
+    if (fclose(file) != 0)
+        ERROR(1, "error : failed to close '%s'\n", path);
 }
 
 static void
@@ -70,14 +64,29 @@ get_terminal_size(void)
 {
     struct winsize window;
 
-    if (ioctl(fileno(stdout), TIOCGWINSZ, &window) == -1) {
-        fprintf(stderr, "error : failed to get terminal size\n");
-
-        exit(1);
-    }
+    if (ioctl(fileno(stdout), TIOCGWINSZ, &window) == -1)
+        ERROR(1, "error : failed to get terminal size\n");
 
     x = window.ws_row;
     y = window.ws_col;
+}
+
+static char *
+copy_input(const char *str)
+{
+    char *cpy;
+
+    {
+        size_t len = strnlen(str, LINE_MAX);
+
+        if (! (cpy = strndup(str, len)))
+            ERROR(1, "error : failed to duplicated string\n");
+
+        /* fix string */
+        cpy[len - 1] = 0;
+    }
+
+    return cpy;
 }
 
 static void
@@ -96,12 +105,7 @@ load_content(const char *path)
         char input[LINE_MAX] = {0};
 
         while (fgets(input, LINE_MAX, file)) {
-            size_t length = strnlen(input, LINE_MAX);
-
-            /* fix string */
-            input[length - 1] = 0;
-
-            content[assigned] = strndup(input, length);
+            content[assigned] = copy_input(input);
 
             if (++assigned == allocated)
                 content = reallocate(content,
@@ -133,11 +137,8 @@ install_signal_handler(void (*function)(int), int signal)
     sig.sa_flags = SA_RESTART;
     sig.sa_handler = function;
 
-    if (sigaction(signal, &sig, NULL) == -1) {
-        fprintf(stderr, "error : failed to install signal handler\n");
-
-        exit(1);
-    }
+    if (sigaction(signal, &sig, NULL) == -1)
+        ERROR(1, "error : failed to install signal handler\n");
 }
 
 static void
